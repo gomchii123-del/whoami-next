@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* Forstelar Style Theme (Warm & Bright) */
+  --bg-color: #F9F9F6;
+  /* Warm Beige / Off-white */
+  --foreground: #222222;
+  /* Charcoal Gray */
+
+  --primary-sage: #88A096;
+  /* Sage Green */
+  --accent-peach: #F2D1C9;
+  /* Soft Peach */
+  --accent-lavender: #A7A5C6;
+  /* Soft Lavender */
+
+  --card-bg: #FFFFFF;
+  --border-color: rgba(34, 34, 34, 0.05);
+
+  --font-serif: 'Playfair Display', serif;
+  --font-sans: 'Nunito', sans-serif;
+}
+
+@theme inline {
+  --color-sage: var(--primary-sage);
+  --color-peach: var(--accent-peach);
+  --color-lavender: var(--accent-lavender);
+  --color-card: var(--card-bg);
+  --color-border: var(--border-color);
+  --color-bg-warm: var(--bg-color);
+
+  --font-serif: var(--font-serif);
+  --font-sans: var(--font-sans);
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+h1 {
+  font-family: var(--font-serif);
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+h2,
+h3 {
+  font-family: var(--font-serif);
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+.text-readable {
+  line-height: 1.6;
+  font-size: 1.125rem;
+  /* 18px for better readability */
+}
+
+.analysis-card {
+  background: var(--card-bg);
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  padding: 2rem;
+  border: 1px solid var(--border-color);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.analysis-card:hover {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.glass-card {
+  /* Re-defining for bright theme */
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 2rem;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
