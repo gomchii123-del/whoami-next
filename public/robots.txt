@@ -1,0 +1,6 @@
+# WHOAMI - 동서양 점술 통합 분석 플랫폼
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://whoami-test.com/sitemap.xml

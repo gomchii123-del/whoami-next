@@ -1,0 +1,52 @@
+{
+    "hosting": {
+        "public": "out",
+        "trailingSlash": true,
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ],
+        "cleanUrls": true,
+        "rewrites": [
+            {
+                "source": "/api/payment/verify",
+                "function": {
+                    "functionId": "verifyPayment",
+                    "region": "asia-northeast3"
+                }
+            },
+            {
+                "source": "/api/payment/webhook",
+                "function": {
+                    "functionId": "portoneWebhook",
+                    "region": "asia-northeast3"
+                }
+            }
+        ],
+        "headers": [
+            {
+                "source": "**/*.@(js|css)",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "public, max-age=31536000, immutable"
+                    }
+                ]
+            }
+        ]
+    },
+    "functions": [
+        {
+            "source": "functions",
+            "codebase": "default",
+            "ignore": [
+                "node_modules",
+                ".git",
+                "firebase-debug.log",
+                "firebase-debug.*.log",
+                "*.local"
+            ]
+        }
+    ]
+}
