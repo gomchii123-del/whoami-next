@@ -85,14 +85,7 @@ export default function CosmicDesignResultView() {
 [Mechanism Logic]: 
 (이곳에 위의 '10단계 심층 분석 알고리즘'에 따라 각 단계별로 최소 300자 이상, 심도 있고 장엄하게 모든 내용을 빠짐없이 각각 목차를 나누어 서술할 것)
 
-[Action Protocol]: 사용자가 즉각 실행할 수 있는 행동 전략 3가지
-
-[JSON Data]: {
-  "type": "",
-  "lp_number": "${numResult.lifePath}",
-  "key_channels": [],
-  "compatibility_score": ""
-}`.trim();
+[Action Protocol]: 사용자가 즉각 실행할 수 있는 행동 전략 3가지`.trim();
 
             setGeneratedPrompt(promptStr);
         } catch (err) {
