@@ -31,9 +31,9 @@ export default function UltimateResultView() {
     let promptStr = '';
     try {
         const saju = SajuEngine.calculate(data.year, data.month, data.day, data.hour, data.minute);
-        const ziwei = ZiWeiEngine.calculate(data.year, data.month, data.day, data.hour, data.gender);
+        const ziwei = ZiWeiEngine.calculate(data.year, data.month, data.day, data.hour, data.minute);
         const astro = AstrologyEngine.calculate(data.year, data.month, data.day, data.hour, data.minute);
-        const numResult = ArcheEngine.performAnalysis(data.year, data.month, data.day, data.name || 'User');
+        const numResult = ArcheEngine.performAnalysis(String(data.year), String(data.month), String(data.day));
 
         const planetData = astro.planets.map(p => `- ${p.name}: ${p.signKr} (House ${p.house})`).join('\\n');
 
