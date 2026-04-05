@@ -30,7 +30,8 @@ export default function UltimateResultView() {
 
     let promptStr = '';
     try {
-        const saju = SajuEngine.calculate(data.year, data.month, data.day, data.hour, data.minute);
+        let branchIndex = Math.floor((data.hour + 1) / 2) % 12;
+        const saju = SajuEngine.calculate(data.year, data.month, data.day, branchIndex, data.gender);
         const ziwei = ZiWeiEngine.calculate(data.year, data.month, data.day, data.hour, data.minute);
         const astro = AstrologyEngine.calculate(data.year, data.month, data.day, data.hour, data.minute);
         const numResult = ArcheEngine.performAnalysis(String(data.year), String(data.month), String(data.day));
