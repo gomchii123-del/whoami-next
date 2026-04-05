@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Share2, Download, Sparkles, RefreshCw, Moon, Sun, Star } from 'lucide-react';
+import { ChevronLeft, Share2, Download, Sparkles, RefreshCw, Moon, Sun, Star, Copy, Check, MessageSquare } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { SajuEngine, lunarToSolar } from '@/lib/saju-engine';
 import { ZiWeiEngine } from '@/lib/ziwei-engine';
@@ -15,6 +15,8 @@ export default function OmniverseResultView() {
     const [userData, setUserData] = useState<any>(null);
     const [result, setResult] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
+    const [generatedPrompt, setGeneratedPrompt] = useState<string>('');
+    const [copied, setCopied] = useState(false);
 
     const [sajuOverview, setSajuOverview] = useState<any>(null);
     const [ziweiOverview, setZiweiOverview] = useState<any>(null);
@@ -104,12 +106,35 @@ export default function OmniverseResultView() {
             setZiweiOverview(ziwei);
             setAstroOverview(astro);
 
+            const sajuStr = formatSajuPrompt(saju);
+            const ziweiStr = formatZiweiPrompt(ziwei);
+            const astroStr = formatAstroPrompt(astro);
+
+            // Construct full prompt for manual copy
+            const fullPrompt = `당신은 세계 최고의 명리학자, 자미두수 대가, 그리고 서양 점성술의 권위자입니다.
+이름: ${data.name}
+
+[사주팔자 분석결과 요약]
+${sajuStr}
+
+[자미두수 명반 요약]
+${ziweiStr}
+
+[서양 점성술 요약]
+${astroStr}
+
+의뢰인의 질문: 동서양 3대 예측 도구를 종합하여 나의 평생 숙명과 미래를 분석해줘.
+
+위 3가지 서로 다른 예측 프레임워크(명리학, 자미두수, 서양 점성술) 데이터를 모두 종합하여, 이 세 가지 시선이 교차하는 지점에서 발견되는 의뢰인만의 고유한 우주적 에너지, 숙명, 장단점, 그리고 미래를 개척하기 위한 궁극적인 조언을 아주 깊이 있는 통찰력으로 작성해 주십시오. 구체적이고 전문적인 어휘를 사용하되 일반인도 감동할 수 있도록 작성하세요.`.trim();
+
+            setGeneratedPrompt(fullPrompt);
+
             // 2. Call backend
             const payload = {
                 name: data.name,
-                saju_data: formatSajuPrompt(saju),
-                ziwei_data: formatZiweiPrompt(ziwei),
-                astrology_data: formatAstroPrompt(astro),
+                saju_data: sajuStr,
+                ziwei_data: ziweiStr,
+                astrology_data: astroStr,
                 question: '동서양 3대 예측 도구를 종합하여 나의 평생 숙명과 미래를 분석해줘.'
             };
 
@@ -125,11 +150,26 @@ export default function OmniverseResultView() {
             
             setResult(resultData);
         } catch (err) {
-            console.error(err);
-            setError('분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+            console.warn("AI Engine is offline or failed, falling back to manual prompt mode:", err);
+            setResult({
+                summary: "통합 분석 인프라 지연 중 (수동 모드 활성화)",
+                deep_analysis: "현재 AI 자동 분석 서버와의 통신이 지연되고 있습니다.<br/><br/>하지만 걱정하지 마세요. 이미 당신의 명리학, 자미두수, 점성술 데이터는 완벽하게 동기화되어 통합 프롬프트로 생성되었습니다.<br/><br/>아래의 <strong>[AI 통합 프롬프트 복사하기]</strong> 버튼을 눌러 복사한 뒤, ChatGPT 혹은 Claude에 붙여넣어 직접 우주의 통찰을 확인해 보세요!",
+                lucky_elements: ["AI 프롬프트 마스터", "스스로 개척하는 자", "우주의 파편"]
+            });
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleCopyPrompt = () => {
+        if (!generatedPrompt) return;
+        navigator.clipboard.writeText(generatedPrompt).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }).catch(err => {
+            console.error('Failed to copy prompt:', err);
+            alert('프롬프트 복사에 실패했습니다.');
+        });
     };
 
     const handleSaveImage = () => {
@@ -269,6 +309,42 @@ export default function OmniverseResultView() {
                         <div className="prose prose-invert prose-p:leading-relaxed prose-p:text-white/80 max-w-none text-[15px]" 
                              dangerouslySetInnerHTML={{ __html: result?.deep_analysis?.replace(/\n/g, '<br />') }} 
                         />
+                    </div>
+                    
+                    {/* Prompt Builder Box (Always available) */}
+                    <div className="mt-8 bg-gray-900 rounded-[2.5rem] p-8 md:p-12 text-center space-y-8 shadow-2xl relative overflow-hidden group border border-amber-400/20">
+                        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-amber-500/10 to-transparent opacity-50" />
+                        
+                        <div className="relative z-10 space-y-6">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white/90 text-xs font-bold tracking-widest uppercase border border-white/10">
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                Prompt Master
+                            </div>
+                            <h2 className="text-2xl md:text-3xl font-serif text-white leading-tight">
+                                인공지능에게 전달할<br/>
+                                <span className="text-amber-400">옴니버스 통합 프롬프트</span>
+                            </h2>
+                            <p className="text-white/60 text-sm leading-relaxed max-w-md mx-auto">
+                                당신의 명리학, 자미두수, 점성술 데이터가 모두 집약된 프롬프트입니다. ChatGPT나 Claude에 붙여넣어 세상에서 가장 입체적인 분석을 받아보세요.
+                            </p>
+
+                            <button
+                                onClick={handleCopyPrompt}
+                                className="group relative inline-flex items-center gap-3 px-10 py-5 bg-white text-gray-900 rounded-2xl font-bold text-lg hover:bg-amber-50 active:scale-95 transition-all shadow-2xl shadow-white/10"
+                            >
+                                {copied ? (
+                                    <>
+                                        <Check className="w-6 h-6 text-green-500" />
+                                        통합 프롬프트 복사 완료!
+                                    </>
+                                ) : (
+                                    <>
+                                        <Copy className="w-5 h-5 text-gray-400 group-hover:text-amber-500" />
+                                        AI 통합 프롬프트 복사하기
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                     
                 </div>
