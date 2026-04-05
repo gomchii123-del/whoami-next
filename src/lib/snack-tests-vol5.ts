@@ -33,7 +33,7 @@
  *   #40 겉바속바 → 기존 cool-syndrome 겹침 → "인간 복어 팽창 지수"로 피벗
  */
 
-import { SnackTest } from './snack-tests';
+import type { SnackTest } from './snack-tests';
 
 export const SNACK_TESTS_VOL5: SnackTest[] = [
     // ── 1~10 ──
