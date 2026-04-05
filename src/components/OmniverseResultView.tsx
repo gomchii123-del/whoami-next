@@ -35,25 +35,52 @@ export default function OmniverseResultView() {
     }, [router]);
 
     const formatSajuPrompt = (saju: any) => {
-        return `년주: ${saju.pillars.year.stemHanja}${saju.pillars.year.branchHanja}, 월주: ${saju.pillars.month.stemHanja}${saju.pillars.month.branchHanja}, 일주: ${saju.pillars.day.stemHanja}${saju.pillars.day.branchHanja}, 시주: ${saju.pillars.hour.stemHanja}${saju.pillars.hour.branchHanja}
-팔품: ${saju.palPum?.name} (${saju.palPum?.mission})
-대운: ${saju.daeunAge}세 주기로 변동.`;
+        const daeunFlow = saju.daeun?.slice(0, 5).map((d: any) => `${d.age}세: ${d.pillar.stemHanja}${d.pillar.branchHanja}`).join(' → ');
+        return `[명식(命式)]
+년주: ${saju.pillars?.year?.stemHanja}${saju.pillars?.year?.branchHanja} (${saju.pillars?.year?.stemElement}/${saju.pillars?.year?.branchElement})
+월주: ${saju.pillars?.month?.stemHanja}${saju.pillars?.month?.branchHanja} (${saju.pillars?.month?.stemElement}/${saju.pillars?.month?.branchElement})
+일주: ${saju.pillars?.day?.stemHanja}${saju.pillars?.day?.branchHanja} (${saju.pillars?.day?.stemElement}/${saju.pillars?.day?.branchElement})
+시주: ${saju.pillars?.hour?.stemHanja}${saju.pillars?.hour?.branchHanja} (${saju.pillars?.hour?.stemElement}/${saju.pillars?.hour?.branchElement})
+[운의 흐름]
+대운수: ${saju.daeunAge} / 주요 대운: ${daeunFlow}
+팔품(임무): ${saju.palPum?.name} (${saju.palPum?.mission})`;
     };
 
     const formatZiweiPrompt = (ziwei: any) => {
-        const lifePalace = ziwei.palaces.find((p: any) => p.isLifePalace);
-        const bodyPalace = ziwei.palaces.find((p: any) => p.isBodyPalace);
-        return `자미 국수: ${ziwei.fiveElementBureau}
-명궁(능력/성격): ${lifePalace?.name} - 주성: ${lifePalace?.majorStars.join(', ') || '무곡'}
-신궁(후반기/몸): ${bodyPalace?.name} - 주성: ${bodyPalace?.majorStars.join(', ') || '무곡'}
-주요 내장 성향: ${ziwei.mainStars.slice(0, 5).join(', ')}`;
+        const palacesStr = ziwei.palaces?.map((p: any) => 
+            `- ${p.branch}궁 [${p.name}]: ${p.stars.join(', ') || '공궁(빈 궁)'}`
+        ).join('\n') || '';
+
+        return `[자미두수 명반(命盤)]
+자미 국수: ${ziwei.fiveElementBureau}
+명궁(선천/기질): ${ziwei.palaces?.[ziwei.lifePalaceIndex]?.branch}궁
+신궁(후천/육체): ${ziwei.palaces?.[ziwei.bodyPalaceIndex]?.branch}궁
+[12궁 성계 배치]
+${palacesStr}`;
     };
 
     const formatAstroPrompt = (astro: any) => {
-        return `상승궁(Ascendant): ${astro.risingSign}
-태양(Sun): ${astro.sunSign}
-달(Moon): ${astro.moonSign}
-원소 비율: 불 ${astro.elements.fire}, 땅 ${astro.elements.earth}, 바람 ${astro.elements.air}, 물 ${astro.elements.water}`;
+        const planetsStr = astro.planets?.map((p: any) => 
+            `${p.name} in ${p.signKr} (${p.house}하우스, ${p.isRetrograde ? '역행' : '순행'})`
+        ).join('\n') || '';
+
+        const housesStr = astro.houses?.map((h: any) => 
+            `${h.index}하우스: ${h.signKr}`
+        ).join(', ') || '';
+
+        const aspectsStr = astro.aspects?.slice(0, 5).map((a: any) => 
+            `${a.body1} - ${a.body2} (${a.typeKr})`
+        ).join('\n') || '';
+
+        return `[점성술(Astrology) 10행성 및 하우스 배치]
+상승궁(Ascendant): ${astro.risingSign} / 태양(Sun): ${astro.sunSign} / 달(Moon): ${astro.moonSign}
+원소 비율: 불 ${astro.elements?.fire}, 땅 ${astro.elements?.earth}, 바람 ${astro.elements?.air}, 물 ${astro.elements?.water}
+[핵심 행성 위치]
+${planetsStr}
+[하우스 커스프(House Cusps)]
+${housesStr}
+[주요 각도(Aspects)]
+${aspectsStr}`;
     };
 
     const generateOmniverseResult = async (data: any) => {
