@@ -38,12 +38,11 @@ export default function CosmicDesignResultView() {
     const generatePrompt = async (data: any) => {
         try {
             // 1. Calculate Numerology Data
-            const numResult = ArcheEngine.calculate({
-                year: data.year,
-                month: data.month,
-                day: data.day,
-                name: data.name
-            });
+            const numResult = ArcheEngine.performAnalysis(
+                String(data.year),
+                String(data.month),
+                String(data.day)
+            );
             setNumerologyData(numResult);
 
             // 2. Generate HD x Numerology Prompt
