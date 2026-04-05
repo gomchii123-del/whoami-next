@@ -30,11 +30,17 @@ export default function UltimateResultView() {
 
     let promptStr = '';
     try {
-        let branchIndex = Math.floor((data.hour + 1) / 2) % 12;
-        const saju = SajuEngine.calculate(data.year, data.month, data.day, branchIndex, data.gender);
-        const ziwei = ZiWeiEngine.calculate(data.year, data.month, data.day, data.hour, data.minute);
-        const astro = AstrologyEngine.calculate(data.year, data.month, data.day, data.hour, data.minute);
-        const numResult = ArcheEngine.performAnalysis(String(data.year), String(data.month), String(data.day));
+        const yr = parseInt(data.year) || 1990;
+        const mo = parseInt(data.month) || 1;
+        const dy = parseInt(data.day) || 1;
+        const hr = parseInt(data.hour) || 12;
+        const mn = parseInt(data.minute) || 0;
+
+        let branchIndex = Math.floor((hr + 1) / 2) % 12;
+        const saju = SajuEngine.calculate(yr, mo, dy, branchIndex, data.gender);
+        const ziwei = ZiWeiEngine.calculate(yr, mo, dy, hr, mn);
+        const astro = AstrologyEngine.calculate(yr, mo, dy, hr, mn);
+        const numResult = ArcheEngine.performAnalysis(String(yr), String(mo), String(dy));
 
         const planetData = astro.planets.map(p => `- ${p.name}: ${p.signKr} (House ${p.house})`).join('\\n');
 
@@ -94,7 +100,11 @@ ${planetData}
         console.error('Ultimate calculation failed:', e);
         return (
             <div className="p-20 text-center text-red-400 font-serif">
-                통합 차트 연산 중 오류가 발생했습니다.
+                <p>통합 차트 연산 중 오류가 발생했습니다.</p>
+                <p className="text-sm mt-4 text-gray-500 whitespace-pre-wrap">{String(e)}</p>
+                {e instanceof Error && e.stack && (
+                    <pre className="text-xs text-gray-400 mt-2 text-left bg-gray-100 p-2 rounded">{e.stack}</pre>
+                )}
             </div>
         );
     }
