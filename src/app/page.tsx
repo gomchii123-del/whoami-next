@@ -105,11 +105,13 @@ function scoreColor(score: number, type: 'love' | 'career' | 'general'): string 
 /* ── 오늘의 추천 테스트 풀 ── */
 const FEATURED_IDS = ['factbomb', 'attraction', 'bed-persona', 'night-persona', 'empire', 'guillotine-sin', 'weakness', 'drunk-mode'];
 
-const CLASSIC_SERVICES = [
-    { id: 'numerology', href: '/analyze/numerology/', icon: '🔮', title: '수비학 분석', desc: '생년월일로 타고난 본질 해독', badge: 'MAIN' },
+const PROMPT_SERVICES = [
     { id: 'ultimate', href: '/analyze/ultimate/', icon: '👑', title: '얼티밋 프롬프트', desc: '5대 시스템(사주/자미/점성/휴디/수비학) 마스터 통합 분석', badge: 'PRO' },
     { id: 'omniverse', href: '/analyze/omniverse/', icon: '♾️', title: '통합 프롬프트 제작', desc: '사주·자미·점성술 종합 AI 프롬프트 분석' },
     { id: 'cosmic-design', href: '/analyze/cosmic-design/', icon: '🧬', title: '코스믹 디자인', desc: '휴먼디자인 × 수비학 프롬프트 제작', badge: 'NEW' },
+];
+
+const CLASSIC_SERVICES = [
     { id: 'saju', href: '/analyze/saju/', icon: '☯️', title: '사주팔자', desc: '생년월일시로 읽는 타고난 운명' },
     { id: 'tarot', href: '/analyze/tarot/', icon: '🃏', title: '타로 카드', desc: '지금 이 순간의 메시지 리딩' },
     { id: 'ziwei', href: '/analyze/ziwei/', icon: '🌌', title: '자미두수', desc: '동양 점성학 기반 명반 분석' },
@@ -432,12 +434,12 @@ export default function Home() {
                 </section>
 
                 {/* ═══════════════════════════════════════════════
-                    1.5. 통합 프롬프트 제작 배너
+                    1.5. 메인 수비학 배너
                    ═══════════════════════════════════════════════ */}
                 <section>
                     <a
-                        href="/analyze/omniverse/"
-                        onClick={goTo('/analyze/omniverse/')}
+                        href="/analyze/numerology/"
+                        onClick={goTo('/analyze/numerology/')}
                         className="block w-full rounded-[24px] overflow-hidden transition-all duration-300 active:scale-[0.98] group relative"
                         style={{ textDecoration: 'none' }}
                     >
@@ -446,13 +448,13 @@ export default function Home() {
                         <div className="relative p-6 md:p-8 flex items-center justify-between">
                             <div className="space-y-2">
                                 <span className="inline-block px-3 py-1 bg-amber-400/20 text-amber-300 text-[10px] font-black tracking-widest rounded-full uppercase border border-amber-400/30">
-                                    Ultimate Prompt Engineering
+                                    NUMEROLOGY MASTER
                                 </span>
                                 <h3 className="text-xl md:text-2xl font-serif font-bold text-white leading-tight">
-                                    통합 프롬프트 제작
+                                    WHOAMI 메인 수비학 풀이
                                 </h3>
                                 <p className="text-sm font-sans text-indigo-200">
-                                    명리학 × 자미두수 × 점성술
+                                    생년월일로 타고난 영혼의 진동수 해독
                                 </p>
                             </div>
                             <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:bg-white/20 transition-colors">
@@ -527,12 +529,43 @@ export default function Home() {
                 </section>
 
                 {/* ═══════════════════════════════════════════════
-                    3. 정통 운세 서비스
+                    3. 통합 프롬프트 영역
+                   ═══════════════════════════════════════════════ */}
+                <section className="space-y-3 pt-6">
+                    <div className="flex items-center gap-2 px-1 mb-2">
+                        <span className="text-lg">🤖</span>
+                        <h2 className="text-[16px] font-bold" style={{ color: c.text }}>통합 AI 프롬프트 엔진</h2>
+                    </div>
+                    <div className="rounded-[16px] overflow-hidden" style={{ background: c.surface, border: `1px solid ${c.surfaceBorder}`, boxShadow: dark ? '0 2px 16px rgba(0,0,0,0.2)' : '0 1px 8px rgba(0,0,0,0.03)' }}>
+                        {PROMPT_SERVICES.map((svc, i) => (
+                            <a
+                                key={svc.id}
+                                href={svc.href}
+                                onClick={goTo(svc.href)}
+                                className="flex items-center gap-4 px-5 py-5 transition-colors"
+                                style={{ textDecoration: 'none', borderBottom: i < PROMPT_SERVICES.length - 1 ? `1px solid ${c.surfaceBorder}` : 'none' }}
+                            >
+                                <span className="text-[26px] w-[32px] text-center">{svc.icon}</span>
+                                <div className="flex-1 min-w-0 pl-1">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-[15px] font-semibold" style={{ color: c.text }}>{svc.title}</p>
+                                        {svc.badge && <span className="text-[9px] font-black tracking-wider px-1.5 py-0.5 rounded-md uppercase" style={{ background: c.accent, color: c.ctaText }}>{svc.badge}</span>}
+                                    </div>
+                                    <p className="text-[12px] mt-1 line-clamp-1" style={{ color: c.textTer }}>{svc.desc}</p>
+                                </div>
+                                <ChevronRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-1" style={{ color: c.surfaceBorder }} />
+                            </a>
+                        ))}
+                    </div>
+                </section>
+
+                {/* ═══════════════════════════════════════════════
+                    4. 일반 단일 운세 서비스
                    ═══════════════════════════════════════════════ */}
                 <section className="space-y-3 pt-4">
                     <div className="flex items-center gap-2 px-1 mb-2">
                         <span className="text-lg">📜</span>
-                        <h2 className="text-[16px] font-bold" style={{ color: c.text }}>정통 운세</h2>
+                        <h2 className="text-[16px] font-bold" style={{ color: c.text }}>정통 단일 운세</h2>
                     </div>
                     <div className="rounded-[16px] overflow-hidden" style={{ background: c.surface, border: `1px solid ${c.surfaceBorder}`, boxShadow: dark ? '0 2px 16px rgba(0,0,0,0.2)' : '0 1px 8px rgba(0,0,0,0.03)' }}>
                         {CLASSIC_SERVICES.map((svc, i) => (
@@ -547,7 +580,7 @@ export default function Home() {
                                 <div className="flex-1 min-w-0 pl-1">
                                     <div className="flex items-center gap-2">
                                         <p className="text-[15px] font-semibold" style={{ color: c.text }}>{svc.title}</p>
-                                        {svc.badge && <span className="text-[9px] font-black tracking-wider px-1.5 py-0.5 rounded-md uppercase" style={{ background: c.accent, color: c.ctaText }}>{svc.badge}</span>}
+                                        {(svc as any).badge && <span className="text-[9px] font-black tracking-wider px-1.5 py-0.5 rounded-md uppercase" style={{ background: c.accent, color: c.ctaText }}>{(svc as any).badge}</span>}
                                     </div>
                                     <p className="text-xs mt-1" style={{ color: c.textTer }}>{svc.desc}</p>
                                 </div>
