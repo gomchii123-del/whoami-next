@@ -1,326 +1,460 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { SNACK_TESTS, SnackTest } from '@/lib/snack-tests';
+import { ArcheEngine } from '@/lib/arche-engine';
 
 /**
- * /snack/ — 프리미엄 인스턴트 테스트 피드
- *
- * 카테고리별 그룹 + 풀 카드 디자인 + 클릭 시 전용 페이지로 이동
- * 모달 X → 전용 페이지에서 결과 표시
+ * /snack/ — 도파민 스낵 테스트 게시판
+ * 자동 슬라이딩 배너 + 검색 + 12개 카테고리 + 2-column 그리드
  */
 
-// 카테고리 정의
-const CATEGORIES = [
+interface Category {
+    id: string;
+    label: string;
+    emoji: string;
+    tests: string[];
+}
+
+const CATEGORIES: Category[] = [
+    { id: 'all', label: '전체', emoji: '🔥', tests: [] },
+    // ── NEW 마라맛 (Vol.5 40종 모아보기) ──
     {
-        id: 'original',
-        title: '나를 해체하는 9가지 질문',
-        subtitle: 'THE ORIGINAL NINE',
-        description: '당신 안에 잠든 진짜 자아를 깨우는 오리지널 테스트',
-        emoji: '🔮',
-        color: '#B388FF',
-        tests: ['night-persona', 'past-life', 'factbomb', 'attraction', 'empire', 'survival', 'mask', 'love-pattern', 'weakness'],
+        id: 'new', label: 'NEW🌶️', emoji: '🆕',
+        tests: ['secondhand-jerk', 'talking-stage-expiry', 'tmi-bomber', 'ghost-breakup', 'ex-callback',
+            'insta-flex', 'emotion-slave', 'nuisance-radar', 'midnight-food-addict', 'phone-peek-urge',
+            'comment-rage', 'mz-vs-latte', 'evil-ceo', 'empathy-zero', 'reality-show-role',
+            'sober-psycho', 'confession-timer', 'gaslighter-within', 'crush-curse', 'taxi-fare-rage',
+            'roommate-hell', 'moral-gray-zone', 'phone-unlock-urge', 'heaven-rejection', 'dm-slide-success',
+            'selfie-narcissism', 'human-blackhole', 'avoidant-escape', 'face-gossip', 'dad-joke-freq',
+            'traitor-nation', 'affection-void', 'schadenfreude', 'love-power-rank', 'shadow-boxing',
+            'pro-whiner', 'reply-speed-interest', 'digital-footprint', 'office-politics', 'pufferfish-rage'],
     },
+    // ── 성격·자아 ──
     {
-        id: 'nsfw',
-        title: '19금 본능과 은밀한 사생활',
-        subtitle: 'AFTER DARK',
-        description: '해가 지면 깨어나는 본능의 세계',
-        emoji: '🔞',
-        color: '#FF80AB',
-        tests: ['bed-persona', 'secret-obsession', 'drunk-mode', 'fatal-flirt', 'fatal-target'],
+        id: 'self', label: '성격·자아', emoji: '🎭',
+        tests: ['night-persona', 'mask', 'factbomb', 'weakness', 'mara-factbomb', 'mirror-factbomb',
+            'battery-personality', 'mbti-reversal', 'mental-age', 'first-impression-color',
+            'emoji-summary', 'bright-psycho', 'self-esteem-drill', 'narcissist-mirror',
+            'ice-cold-t', 'cool-syndrome', 'stubborn-ranking', 'braindead', 'weird-perfectionist',
+            'angel-mask-trash', 'fake-smile', 'brain-no-filter', 'attention-seeker', 'kkondae',
+            'empathy-zero', 'moral-gray-zone', 'pufferfish-rage', 'selfie-narcissism', 'tmi-bomber'],
     },
+    // ── 연애·썸 ──
     {
-        id: 'relation',
-        title: '인간관계 팩트폭행',
-        subtitle: 'SOCIAL AUTOPSY',
-        description: '관계 속에서 나도 모르게 반복하는 패턴의 해부',
-        emoji: '💣',
-        color: '#FFF176',
-        tests: ['behind-talk', 'sucker-target', 'dark-button', 'revenge-scenario', 'energy-vampire'],
+        id: 'love', label: '연애·썸', emoji: '💕',
+        tests: ['attraction', 'love-pattern', 'fatal-attraction', 'crush-success', 'love-cell',
+            'love-expiry', 'first-spark', 'destiny-place', 'flirting-tier', 'fishpond-rank',
+            'office-romance', 'breakup-karma', 'transfer-love', 'ex-overreact',
+            'ex-wedding', 'possessive-player', 'dark-romance', 'trash-magnet-love',
+            'day-night-switch', 'blue-tick-obsess',
+            'talking-stage-expiry', 'ghost-breakup', 'ex-callback', 'confession-timer',
+            'crush-curse', 'reality-show-role', 'love-power-rank', 'affection-void',
+            'dm-slide-success', 'reply-speed-interest', 'phone-unlock-urge'],
     },
+    // ── 19금·은밀 ──
     {
-        id: 'money',
-        title: '돈과 타락한 자본주의',
-        subtitle: 'GREED INDEX',
-        description: '당신의 재물 본능과 소비 심리의 적나라한 민낯',
-        emoji: '💰',
-        color: '#FFD740',
-        tests: ['rich-madness', 'spending-pattern', 'scam-talent', 'benz-probability', 'broke-survival'],
+        id: 'nsfw', label: '19금', emoji: '🔞',
+        tests: ['bed-persona', 'secret-obsession', 'fatal-flirt', 'fatal-target',
+            'inner-devil', 'skinship-tension', 'brain-runaway', 'mara-sexual-tension',
+            'midnight-hobby', 'hidden-cringe', 'vampire-charm', 'search-history',
+            'phone-peek-urge', 'gaslighter-within'],
     },
+    // ── 술·파티 ──
     {
-        id: 'occult',
-        title: '오컬트와 세계관 과몰입',
-        subtitle: 'DARK LORE',
-        description: '전생의 기억, 수호 악마, 지옥의 형벌 구역까지',
-        emoji: '🪓',
-        color: '#EF9A9A',
-        tests: ['guillotine-sin', 'guardian-demon', 'hell-vip'],
+        id: 'drink', label: '술·파티', emoji: '🍻',
+        tests: ['drunk-mode', 'alcoholic-persona', 'drunk-flirt', 'drunk-disgrace',
+            'drunk-skinship', 'midnight-text-defense', 'fox-wolf',
+            'sober-psycho', 'midnight-food-addict'],
+    },
+    // ── 인간관계 ──
+    {
+        id: 'relation', label: '인간관계', emoji: '💣',
+        tests: ['behind-talk', 'sucker-target', 'dark-button', 'revenge-scenario',
+            'energy-vampire', 'red-flag', 'gossip-speed', 'social-radar',
+            'group-chat-type', 'weirdo-magnet', 'trash-magnet', 'scam-victim',
+            'pro-buzzkill', 'selective-rage', 'rage-bottom', 'snake-or-fool',
+            'flirt-defense', 'hidden-villain',
+            'nuisance-radar', 'emotion-slave', 'human-blackhole', 'avoidant-escape',
+            'face-gossip', 'pro-whiner', 'schadenfreude', 'shadow-boxing',
+            'roommate-hell', 'comment-rage'],
+    },
+    // ── 돈·직장 ──
+    {
+        id: 'money', label: '돈·직장', emoji: '💰',
+        tests: ['empire', 'rich-madness', 'spending-pattern', 'scam-talent',
+            'benz-probability', 'broke-survival', 'empty-wallet', 'gold-spoon',
+            'money-therapy', 'rage-spending', 'credit-card-madness', 'greed-meter',
+            'lotto-reaction', 'life-waste',
+            'secondhand-jerk', 'taxi-fare-rage', 'evil-ceo'],
+    },
+    // ── 직장생활 ──
+    {
+        id: 'office', label: '직장생활', emoji: '🏢',
+        tests: ['office-rank', 'office-villain', 'resign-threshold', 'teamwork-parasite',
+            'burnout-warning', 'keyboard-warrior', 'bs-artist', 'bed-hermit',
+            'shortform-addict', 'office-politics', 'mz-vs-latte', 'dad-joke-freq'],
+    },
+    // ── 전생·오컬트 ──
+    {
+        id: 'occult', label: '전생·오컬트', emoji: '👻',
+        tests: ['past-life', 'past-sin', 'past-animal', 'past-enemy', 'past-job',
+            'guillotine-sin', 'guardian-demon', 'hell-vip', 'fallen-angel',
+            'next-life-country', 'traitor-nation', 'heaven-rejection'],
+    },
+    // ── 서바이벌 ──
+    {
+        id: 'survival', label: '서바이벌', emoji: '⚡',
+        tests: ['survival', 'zombie-survival', 'island-role', 'anger-gauge',
+            'stress-cure'],
+    },
+    // ── SNS·디지털 ──
+    {
+        id: 'sns', label: 'SNS·디지털', emoji: '📱',
+        tests: ['sns-stalker', 'ex-sns-stalking', 'shortform-addict',
+            'insta-flex', 'digital-footprint'],
     },
 ];
 
-// 테스트 ID로 데이터 찾기
 const testMap = new Map(SNACK_TESTS.map(t => [t.id, t]));
-
-// 티저 문구 — 결과를 보고 싶게 만드는 한 줄
-const TEASERS: Record<string, string> = {
-    'night-persona': '낮의 당신과 밤의 당신은 완전히 다른 사람입니다',
-    'past-life': '당신의 전생이 이번 생에 미치는 영향',
-    'factbomb': '아무도 안 해주던 3줄 팩트가 기다리고 있습니다',
-    'attraction': '끌리면 안 되는데 끌리는 유형의 정체',
-    'empire': '당신이 부를 쌓는 유일한 공식',
-    'survival': '위기 상황, 당신의 뇌가 선택하는 첫 번째 반응',
-    'mask': '당신이 숨겨온 진짜 얼굴이 드러납니다',
-    'love-pattern': '반복되는 연애 실패, 근본 원인을 해부합니다',
-    'weakness': '누구도 말해주지 않았던 치명적 약점 1가지',
-    'bed-persona': '침대 위에서만 나타나는 숨겨진 성향',
-    'secret-obsession': '드러나면 끝장인 위험한 집착의 정체',
-    'drunk-mode': '술기운에 봉인 해제되는 당신의 쓰레기력',
-    'fatal-flirt': '당신을 완전히 무장해제시키는 플러팅 한 마디',
-    'fatal-target': '한 번 얽히면 절대 못 빠져나오는 번호',
-    'behind-talk': '단톡방에서 당신을 부르는 비밀 키워드',
-    'sucker-target': '평생 호구 잡히기 딱 좋은 상대의 번호',
-    'dark-button': '겉으로 웃지만 속으로 칼을 가는 순간',
-    'revenge-scenario': '나를 건드리면 겪게 될 시나리오',
-    'energy-vampire': '당장 인생에서 쳐내야 할 기질',
-    'rich-madness': '억대 통장이 생기면 가장 먼저 저지를 짓',
-    'spending-pattern': '지갑을 거덜내는 어이없는 소비 패턴',
-    'scam-talent': '합법적으로 돈 긁어모으는 타고난 기질',
-    'benz-probability': '이번 생에 벤츠 확률은 몇 퍼센트?',
-    'broke-survival': '잔고 바닥 → 본능적 생존 전략 활성화',
-    'guillotine-sin': '전생, 단두대 위에서 처형당한 이유',
-    'guardian-demon': '당신을 은밀하게 돕는 악마의 이름',
-    'hell-vip': '지옥에서 배정받을 VIP 형벌 구역',
-};
 
 export default function SnackFeed() {
     const [lp, setLp] = useState<number | null>(null);
-    const [lpDisplay, setLpDisplay] = useState<number | null>(null);
-    const [revealed, setRevealed] = useState<Set<string>>(new Set());
+    const [activeCategory, setActiveCategory] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchFocused, setSearchFocused] = useState(false);
+    const [carouselIdx, setCarouselIdx] = useState(0);
 
     useEffect(() => {
         try {
             const stored = sessionStorage.getItem('arche_analysis');
             if (stored) {
                 const parsed = JSON.parse(stored);
-                const { ArcheEngine } = require('@/lib/arche-engine');
-                const result = ArcheEngine.performAnalysis(parsed.year, parsed.month, parsed.day);
+                const result = ArcheEngine.performAnalysis(String(parsed.year), String(parsed.month), String(parsed.day));
                 const num = result.lifePath;
-                const baseNum = num === 11 ? 2 : num === 22 ? 4 : num === 33 ? 6 : num;
-                setLp(baseNum);
-                setLpDisplay(num);
+                setLp(num === 11 ? 2 : num === 22 ? 4 : num === 33 ? 6 : num);
             }
         } catch {}
     }, []);
 
-    const handleTestClick = (test: SnackTest) => {
-        if (!lp) {
-            window.location.href = '/analyze/numerology/';
-            return;
-        }
-        window.location.href = `/snack/${test.id}/`;
-    };
+    // 오늘의 마라맛 추천 (Date seed 기반 5개)
+    const dailyPicks = useMemo(() => {
+        const today = new Date();
+        const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+        const shuffled = [...SNACK_TESTS].sort((a, b) => {
+            const ha = ((seed * 31 + a.id.charCodeAt(0) * 17) % 9973);
+            const hb = ((seed * 31 + b.id.charCodeAt(0) * 17) % 9973);
+            return ha - hb;
+        });
+        return shuffled.slice(0, 5);
+    }, []);
 
-    // Reveal teaser animation
-    const revealTest = (id: string) => {
-        setRevealed(prev => new Set(prev).add(id));
-    };
+    const BANNER_COPIES = [
+        '🔥 오늘 내 멘탈을 털어버릴 팩폭은?',
+        '💀 이 테스트 결과 보면 잠 못 잔다',
+        '🌶️ 매운맛 주의! 자존심 보호 불가',
+        '⚡ 3초 만에 드러나는 당신의 민낯',
+        '🎯 오늘의 추천 심리 테스트',
+    ];
+
+    // 자동 슬라이드
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCarouselIdx(prev => (prev + 1) % dailyPicks.length);
+        }, 5000);
+        return () => clearInterval(timer);
+    }, [dailyPicks.length]);
+
+    const handleTestClick = useCallback((test: SnackTest) => {
+        window.location.href = `/snack/${test.id}/`;
+    }, []);
+
+    // 카테고리별 + 검색 필터링
+    const filteredTests = useMemo(() => {
+        let tests: SnackTest[];
+
+        if (activeCategory === 'all') {
+            tests = SNACK_TESTS;
+        } else {
+            const cat = CATEGORIES.find(c => c.id === activeCategory);
+            if (!cat || cat.tests.length === 0) {
+                tests = SNACK_TESTS;
+            } else {
+                tests = cat.tests.map(id => testMap.get(id)).filter(Boolean) as SnackTest[];
+            }
+        }
+
+        if (searchQuery.trim()) {
+            const q = searchQuery.trim().toLowerCase();
+            tests = tests.filter(t =>
+                t.title.toLowerCase().includes(q) ||
+                t.subtitle.toLowerCase().includes(q) ||
+                t.id.toLowerCase().includes(q)
+            );
+        }
+
+        return tests;
+    }, [activeCategory, searchQuery]);
+
+    // 각 카테고리 테스트 수
+    const categoryCounts = useMemo(() => {
+        const counts: Record<string, number> = { all: SNACK_TESTS.length };
+        CATEGORIES.forEach(cat => {
+            if (cat.id !== 'all') {
+                counts[cat.id] = cat.tests.filter(id => testMap.has(id)).length;
+            }
+        });
+        return counts;
+    }, []);
 
     return (
         <div className="min-h-screen" style={{ background: '#08080F' }}>
-            {/* ── HERO HEADER ── */}
-            <div className="relative overflow-hidden">
-                {/* Ambient glow */}
-                <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-[-20%] left-[20%] w-[60vw] h-[60vw] rounded-full blur-[120px]" style={{ background: 'radial-gradient(circle, rgba(179,136,255,0.12), transparent 70%)' }} />
-                    <div className="absolute bottom-[-30%] right-[10%] w-[50vw] h-[50vw] rounded-full blur-[100px]" style={{ background: 'radial-gradient(circle, rgba(255,128,171,0.08), transparent 70%)' }} />
+
+            {/* ── 헤더 ── */}
+            <div className="px-5 pt-12 pb-4 max-w-2xl mx-auto">
+                <a
+                    href="/"
+                    onClick={e => { e.preventDefault(); window.location.href = '/'; }}
+                    className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.2em] uppercase mb-6"
+                    style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}
+                >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                    WHOAMI
+                </a>
+
+                <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-2xl font-black text-white tracking-tight">🧪 스낵 테스트</h1>
+                    <span className="text-[10px] font-black tracking-wider px-2 py-1 rounded-md" style={{ background: 'rgba(255,107,107,0.12)', color: '#FF6B6B' }}>
+                        {SNACK_TESTS.length}개
+                    </span>
                 </div>
+                <p className="text-[13px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    3초 만에 나를 해부하는 인스턴트 성격 테스트
+                </p>
+            </div>
 
-                <div className="relative z-10 px-5 pt-14 pb-10 max-w-2xl mx-auto">
-                    {/* Nav */}
-                    <a
-                        href="/"
-                        onClick={(e) => { e.preventDefault(); window.location.href = '/'; }}
-                        className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.2em] uppercase mb-8"
-                        style={{ color: 'rgba(255,255,255,0.25)' }}
-                    >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                        WHOAMI
-                    </a>
-
-                    <div className="space-y-4 mb-8">
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-black tracking-wider" style={{ background: 'rgba(255,107,107,0.12)', color: '#FF6B6B', border: '1px solid rgba(255,107,107,0.2)' }}>
-                            🔥 {SNACK_TESTS.length}개 테스트
-                        </div>
-                        <h1 className="text-3xl md:text-5xl font-black text-white leading-[1.15] tracking-tight">
-                            적나라한 진실,<br />
-                            <span style={{ background: 'linear-gradient(135deg, #B388FF, #FF80AB)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                                마주할 준비 됐나요?
-                            </span>
-                        </h1>
-                        <p className="text-[15px] leading-relaxed max-w-md" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                            수비학 인생경로수 기반 · 읽는 순간 소름 돋는 정밀 분석
-                        </p>
-                    </div>
-
-                    {!lp && (
-                        <a
-                            href="/analyze/numerology/"
-                            onClick={(e) => { e.preventDefault(); window.location.href = '/analyze/numerology/'; }}
-                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-[15px] transition-all active:scale-[0.97]"
-                            style={{ background: 'linear-gradient(135deg, #B388FF, #9C61E8)', color: '#fff', boxShadow: '0 4px 20px rgba(179,136,255,0.3)' }}
+            {/* ── 오늘의 마라맛 추천 배너 (자동 슬라이드) ── */}
+            <div className="max-w-2xl mx-auto px-4 pb-4">
+                <div className="relative overflow-hidden rounded-2xl" style={{ height: '160px' }}>
+                    {dailyPicks.map((pick, idx) => (
+                        <button
+                            key={pick.id}
+                            onClick={() => handleTestClick(pick)}
+                            className="absolute inset-0 w-full h-full text-left transition-all duration-700 ease-in-out"
+                            style={{
+                                transform: `translateX(${(idx - carouselIdx) * 100}%)`,
+                                opacity: idx === carouselIdx ? 1 : 0,
+                                background: pick.darkGradient || pick.gradient,
+                                border: 'none',
+                            }}
                         >
-                            ✦ 먼저 수비학 분석하기
-                        </a>
-                    )}
-                    {lp && (
-                        <div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(179,136,255,0.08)', border: '1px solid rgba(179,136,255,0.2)' }}>
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm" style={{ background: 'linear-gradient(135deg, #B388FF, #9C61E8)', color: '#fff' }}>
-                                ✦
+                            {/* 오버레이 */}
+                            <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.1))' }} />
+                            {/* 배경 이모지 */}
+                            <div className="absolute -right-4 -bottom-4 text-[120px] opacity-[0.08] leading-none select-none">{pick.emoji}</div>
+                            {/* 텍스트 */}
+                            <div className="relative z-10 h-full flex flex-col justify-between p-5">
+                                <div>
+                                    <p className="text-[10px] font-black tracking-[0.25em] uppercase mb-1" style={{ color: pick.accentColor }}>
+                                        🌶️ 오늘의 마라맛 추천
+                                    </p>
+                                    <p className="text-[12px] font-bold mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                        {BANNER_COPIES[idx % BANNER_COPIES.length]}
+                                    </p>
+                                </div>
+                                <div className="flex items-end gap-3">
+                                    <span className="text-4xl">{pick.emoji}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-[18px] font-black text-white leading-tight truncate">{pick.title}</h3>
+                                        <p className="text-[11px] truncate" style={{ color: 'rgba(255,255,255,0.5)' }}>{pick.subtitle}</p>
+                                    </div>
+                                    <div className="shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-bold" style={{ background: `${pick.accentColor}25`, color: pick.accentColor, border: `1px solid ${pick.accentColor}40` }}>
+                                        도전 →
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-[13px] font-bold text-white">분석 완료</p>
-                                <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>나만의 결과가 준비되어 있습니다</p>
-                            </div>
-                        </div>
-                    )}
+                        </button>
+                    ))}
+                    {/* 인디케이터 */}
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                        {dailyPicks.map((_, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => setCarouselIdx(idx)}
+                                className="w-1.5 h-1.5 rounded-full transition-all duration-300"
+                                style={{ background: idx === carouselIdx ? '#fff' : 'rgba(255,255,255,0.25)', transform: idx === carouselIdx ? 'scale(1.5)' : 'scale(1)' }}
+                            />
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            {/* ── CATEGORY SECTIONS ── */}
-            <div className="max-w-2xl mx-auto px-4 pb-20 space-y-14">
-                {CATEGORIES.map((cat, catIdx) => (
-                    <section key={cat.id} className="space-y-5">
-                        {/* Category Header */}
-                        <div className="px-1">
-                            <div className="flex items-center gap-3 mb-3">
-                                <span className="text-2xl">{cat.emoji}</span>
-                                <div>
-                                    <p className="text-[10px] font-black tracking-[0.25em] uppercase" style={{ color: cat.color }}>{cat.subtitle}</p>
-                                    <h2 className="text-xl font-black text-white tracking-tight">{cat.title}</h2>
+            {/* ── 검색 바 ── */}
+            <div className="max-w-2xl mx-auto px-5 pb-2">
+                <div
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200"
+                    style={{
+                        background: searchFocused ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+                        border: `1px solid ${searchFocused ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)'}`,
+                    }}
+                >
+                    <svg className="w-4 h-4 shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        onFocus={() => setSearchFocused(true)}
+                        onBlur={() => setSearchFocused(false)}
+                        placeholder="테스트 검색 (예: 전생, 술, 연애...)"
+                        className="flex-1 bg-transparent text-[14px] text-white outline-none placeholder:text-white/30"
+                    />
+                    {searchQuery && (
+                        <button onClick={() => setSearchQuery('')} className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                            <svg className="w-3 h-3 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    )}
+                </div>
+
+                {!lp && (
+                    <a
+                        href="/analyze/numerology/"
+                        onClick={e => { e.preventDefault(); window.location.href = '/analyze/numerology/'; }}
+                        className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-xl font-bold text-[13px] transition-all active:scale-[0.97]"
+                        style={{ background: 'linear-gradient(135deg, #B388FF, #9C61E8)', color: '#fff', textDecoration: 'none' }}
+                    >
+                        ✦ 먼저 수비학 분석하기
+                    </a>
+                )}
+            </div>
+
+            {/* ── 카테고리 탭 (가로 스크롤) ── */}
+            <div className="sticky top-0 z-20 px-4 py-3 max-w-2xl mx-auto" style={{ background: '#08080F' }}>
+                <div
+                    className="flex gap-2 overflow-x-auto pb-1"
+                    style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+                >
+                    {CATEGORIES.map(cat => {
+                        const isActive = activeCategory === cat.id;
+                        const count = categoryCounts[cat.id] || 0;
+                        return (
+                            <button
+                                key={cat.id}
+                                onClick={() => { setActiveCategory(cat.id); setSearchQuery(''); }}
+                                className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold transition-all whitespace-nowrap"
+                                style={{
+                                    background: isActive ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.04)',
+                                    color: isActive ? '#fff' : 'rgba(255,255,255,0.55)',
+                                    border: `1px solid ${isActive ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                                }}
+                            >
+                                <span className="text-sm">{cat.emoji}</span>
+                                {cat.label}
+                                {cat.id !== 'all' && (
+                                    <span className="text-[10px] ml-0.5" style={{ color: isActive ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)' }}>
+                                        {count}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* ── 검색 결과 카운트 ── */}
+            {searchQuery.trim() && (
+                <div className="max-w-2xl mx-auto px-5 pb-3">
+                    <p className="text-[12px] font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                        &quot;{searchQuery}&quot; 검색 결과 <span style={{ color: '#FF6B6B' }}>{filteredTests.length}개</span>
+                    </p>
+                </div>
+            )}
+
+            {/* ── 게시판 그리드 (2열) ── */}
+            <div className="max-w-2xl mx-auto px-4 pb-20">
+                {filteredTests.length === 0 ? (
+                    <div className="text-center py-20 space-y-4">
+                        <span className="text-5xl block">🔍</span>
+                        <p className="text-[15px] font-bold text-white/40">검색 결과가 없습니다</p>
+                        <p className="text-[12px] text-white/25">다른 키워드로 검색하거나, 카테고리를 변경해 보세요</p>
+                        <button onClick={() => { setSearchQuery(''); setActiveCategory('all'); }} className="mt-2 px-4 py-2 rounded-lg text-[12px] font-bold" style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}>
+                            전체 보기
+                        </button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 gap-2.5">
+                        {filteredTests.map((test) => (
+                            <button
+                                key={test.id}
+                                onClick={() => handleTestClick(test)}
+                                className="text-left rounded-2xl overflow-hidden transition-all duration-200 hover:scale-[1.02] active:scale-[0.97]"
+                                style={{
+                                    background: test.gradient,
+                                    border: '1px solid rgba(255,255,255,0.06)',
+                                }}
+                            >
+                                <div className="pt-5 pb-2 flex justify-center">
+                                    <span className="text-[38px] drop-shadow-lg">{test.emoji}</span>
                                 </div>
-                            </div>
-                            <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.3)' }}>{cat.description}</p>
-                        </div>
-
-                        {/* Test Cards — full-width stacked */}
-                        <div className="space-y-3">
-                            {cat.tests.map((testId, idx) => {
-                                const test = testMap.get(testId);
-                                if (!test) return null;
-                                const isRevealed = revealed.has(testId);
-                                const teaser = TEASERS[testId] || test.subtitle;
-                                const testNumber = String(idx + 1).padStart(2, '0');
-
-                                return (
+                                <div className="px-3.5 pb-4 space-y-1">
+                                    <h3 className="text-[13px] font-black text-white leading-tight line-clamp-2">
+                                        {test.title}
+                                    </h3>
+                                    <p className="text-[10px] leading-snug line-clamp-2" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                                        {test.subtitle}
+                                    </p>
+                                </div>
+                                <div className="px-3.5 pb-3.5">
                                     <div
-                                        key={testId}
-                                        className="group relative rounded-2xl overflow-hidden transition-all duration-300"
+                                        className="w-full py-2 rounded-lg text-center text-[10px] font-bold tracking-wide"
                                         style={{
-                                            background: test.gradient,
-                                            border: '1px solid rgba(255,255,255,0.06)',
+                                            background: 'rgba(255,255,255,0.12)',
+                                            color: 'rgba(255,255,255,0.75)',
                                         }}
                                     >
-                                        {/* Number badge */}
-                                        <div className="absolute top-4 right-4 text-[11px] font-black tracking-wider" style={{ color: 'rgba(255,255,255,0.12)' }}>
-                                            {testNumber}
-                                        </div>
-
-                                        <div className="p-5 md:p-6">
-                                            {/* Top row */}
-                                            <div className="flex items-start gap-4 mb-4">
-                                                <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                                                    {test.emoji}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className="text-[17px] font-black text-white leading-tight mb-1">{test.title}</h3>
-                                                    <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>{test.subtitle}</p>
-                                                </div>
-                                            </div>
-
-                                            {/* Teaser — builds anticipation */}
-                                            <div className="mb-4">
-                                                {!isRevealed ? (
-                                                    <button
-                                                        onClick={() => revealTest(testId)}
-                                                        className="w-full text-left py-3 px-4 rounded-xl transition-all hover:scale-[1.01] active:scale-[0.99]"
-                                                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)' }}
-                                                    >
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: `${test.accentColor}20` }}>
-                                                                    <svg className="w-3 h-3" style={{ color: test.accentColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m0 0v2m0-2h2m-2 0H10m10-6a10 10 0 11-20 0 10 10 0 0120 0z" /></svg>
-                                                                </div>
-                                                                <span className="text-[13px] font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>미리보기 열기</span>
-                                                            </div>
-                                                            <svg className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.2)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                                                        </div>
-                                                    </button>
-                                                ) : (
-                                                    <div
-                                                        className="py-3 px-4 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300"
-                                                        style={{ background: `${test.accentColor}08`, borderLeft: `3px solid ${test.accentColor}40` }}
-                                                    >
-                                                        <p className="text-[14px] leading-[1.7] font-medium" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                                                            &ldquo;{teaser}&rdquo;
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* CTA Button */}
-                                            <button
-                                                onClick={() => handleTestClick(test)}
-                                                className="w-full py-3.5 rounded-xl font-bold text-[14px] tracking-wide transition-all active:scale-[0.97] flex items-center justify-center gap-2"
-                                                style={{
-                                                    background: `linear-gradient(135deg, ${test.accentColor}20, ${test.accentColor}10)`,
-                                                    color: test.accentColor,
-                                                    border: `1px solid ${test.accentColor}30`,
-                                                }}
-                                            >
-                                                {lp ? '내 결과 확인하기' : '분석 시작하기'}
-                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                                            </button>
-                                        </div>
+                                        {lp ? '결과 보기 →' : '분석하기 →'}
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </section>
-                ))}
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                )}
 
-                {/* ── BOTTOM CTA ── */}
-                <div className="pt-8 text-center space-y-6">
+                {/* ── 하단 링크 ── */}
+                <div className="pt-10 text-center space-y-4">
                     <div className="h-px mx-auto max-w-[200px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
-                    <div>
-                        <p className="text-[13px] font-bold mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>더 깊은 분석이 필요하다면</p>
-                        <div className="flex flex-wrap justify-center gap-3">
-                            <a href="/analyze/numerology/" onClick={(e) => { e.preventDefault(); window.location.href = '/analyze/numerology/'; }}
-                                className="px-4 py-2 rounded-lg text-[13px] font-bold transition-all hover:scale-[1.02]"
-                                style={{ background: 'rgba(136,160,150,0.1)', color: 'rgba(136,160,150,0.7)', border: '1px solid rgba(136,160,150,0.2)' }}>
-                                ✦ 수비학
+                    <p className="text-[12px] font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>더 깊은 분석이 필요하다면</p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                        {[
+                            { href: '/analyze/numerology/', label: '✦ 수비학', bg: 'rgba(136,160,150,0.1)', color: 'rgba(136,160,150,0.7)', border: 'rgba(136,160,150,0.2)' },
+                            { href: '/analyze/saju/', label: '☯ 사주', bg: 'rgba(184,138,106,0.1)', color: 'rgba(184,138,106,0.7)', border: 'rgba(184,138,106,0.2)' },
+                            { href: '/analyze/tarot/', label: '🃏 타로', bg: 'rgba(123,110,160,0.1)', color: 'rgba(123,110,160,0.7)', border: 'rgba(123,110,160,0.2)' },
+                        ].map(link => (
+                            <a
+                                key={link.href}
+                                href={link.href}
+                                onClick={e => { e.preventDefault(); window.location.href = link.href; }}
+                                className="px-4 py-2 rounded-lg text-[12px] font-bold transition-all hover:scale-[1.02]"
+                                style={{ background: link.bg, color: link.color, border: `1px solid ${link.border}`, textDecoration: 'none' }}
+                            >
+                                {link.label}
                             </a>
-                            <a href="/analyze/saju/" onClick={(e) => { e.preventDefault(); window.location.href = '/analyze/saju/'; }}
-                                className="px-4 py-2 rounded-lg text-[13px] font-bold transition-all hover:scale-[1.02]"
-                                style={{ background: 'rgba(184,138,106,0.1)', color: 'rgba(184,138,106,0.7)', border: '1px solid rgba(184,138,106,0.2)' }}>
-                                ☯ 사주
-                            </a>
-                            <a href="/analyze/tarot/" onClick={(e) => { e.preventDefault(); window.location.href = '/analyze/tarot/'; }}
-                                className="px-4 py-2 rounded-lg text-[13px] font-bold transition-all hover:scale-[1.02]"
-                                style={{ background: 'rgba(123,110,160,0.1)', color: 'rgba(123,110,160,0.7)', border: '1px solid rgba(123,110,160,0.2)' }}>
-                                🜔 타로
-                            </a>
-                        </div>
+                        ))}
                     </div>
                 </div>
 
-                {/* ── FOOTER ── */}
+                {/* ── Footer ── */}
                 <div className="text-center pt-16 pb-8">
-                    <p className="text-[10px] tracking-[0.3em] font-bold uppercase" style={{ color: 'rgba(255,255,255,0.08)' }}>
+                    <p className="text-[10px] tracking-[0.3em] font-bold uppercase" style={{ color: 'rgba(255,255,255,0.15)' }}>
                         © 2026 WHOAMI PROJECT
                     </p>
                 </div>
             </div>
+
+            <style jsx global>{`
+                .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+            `}</style>
         </div>
     );
 }

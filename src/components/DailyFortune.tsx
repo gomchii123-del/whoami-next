@@ -1,7 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import FortuneCookieModal from '@/components/FortuneCookie';
+import { useMemo } from 'react';
 
 /**
  * DailyFortune — 오늘의 수비학 운세 + 포츈쿠키 모달 트리거
@@ -51,7 +50,6 @@ function getPersonalDayEnergy(bY: number, bM: number, bD: number, today: Date): 
 export default function DailyFortune({ birthYear = 2000, birthMonth = 1, birthDay = 1 }: DailyFortuneProps) {
     const today = useMemo(() => new Date(), []);
     const energy = useMemo(() => getPersonalDayEnergy(birthYear, birthMonth, birthDay, today), [birthYear, birthMonth, birthDay, today]);
-    const [cookieOpen, setCookieOpen] = useState(false);
 
     const days = ['일', '월', '화', '수', '목', '금', '토'];
     const dateStr = `${today.getMonth() + 1}월 ${today.getDate()}일 ${days[today.getDay()]}요일`;
@@ -111,23 +109,8 @@ export default function DailyFortune({ birthYear = 2000, birthMonth = 1, birthDa
                         </div>
                     </div>
 
-                    {/* 포츈쿠키 트리거 버튼 */}
-                    <button
-                        onClick={() => setCookieOpen(true)}
-                        className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-bold transition-all active:scale-[0.97] hover:opacity-80"
-                        style={{
-                            background: 'linear-gradient(135deg, rgba(26,26,46,0.06), rgba(108,92,231,0.08))',
-                            color: '#6C5CE7',
-                            border: '1px solid rgba(108,92,231,0.12)',
-                        }}
-                    >
-                        🥠 포츈쿠키 뽑기
-                    </button>
                 </div>
             </div>
-
-            {/* 포츈쿠키 모달 */}
-            <FortuneCookieModal isOpen={cookieOpen} onClose={() => setCookieOpen(false)} />
         </>
     );
 }

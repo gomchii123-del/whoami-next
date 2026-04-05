@@ -58,26 +58,91 @@ export default function FortunePage() {
     // 생년월일 미입력 시 안내
     if (!birthData) {
         return (
-            <main className="relative min-h-screen bg-bg-warm flex flex-col items-center overflow-hidden">
+            <main className="relative min-h-screen bg-[#FDF9F1] flex flex-col items-center justify-center overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-40">
-                    <div className="absolute top-[10%] left-[15%] w-[20vw] h-[20vw] bg-sage/5 rounded-full blur-[100px]" />
-                    <div className="absolute bottom-[20%] right-[10%] w-[25vw] h-[25vw] bg-peach/10 rounded-full blur-[120px]" />
+                    <div className="absolute top-[5%] left-[5%] w-[30vw] h-[30vw] bg-[#E8E1DE]/40 rounded-full blur-[100px]" />
+                    <div className="absolute bottom-[5%] right-[5%] w-[40vw] h-[40vw] bg-[#DAD0CB]/30 rounded-full blur-[120px]" />
                 </div>
-                <div className="z-10 w-full max-w-lg px-5 py-20 text-center space-y-8">
-                    <div className="text-6xl">🔮</div>
-                    <h1 className="text-2xl md:text-3xl font-serif text-foreground">
-                        먼저 생년월일을 입력해주세요
-                    </h1>
-                    <p className="text-gray-500 leading-relaxed">
-                        수비학 분석에서 생년월일을 입력하면<br />
-                        개인화된 오늘의 운세와 포츈쿠키를 즐길 수 있어요.
-                    </p>
-                    <Link
-                        href="/analyze/numerology/"
-                        className="inline-flex items-center gap-2 px-8 py-4 bg-sage text-white rounded-2xl font-bold text-base hover:bg-sage/90 transition-all shadow-lg"
-                    >
-                        수비학 분석하러 가기 →
-                    </Link>
+                
+                <div className="relative z-10 w-full max-w-xl px-5 py-12 flex flex-col items-center">
+                    {/* Header Site Name */}
+                    <div className="mb-10 text-center">
+                        <span className="text-[#88A096] font-bold tracking-[0.3em] text-xs uppercase mb-3 block">WHOAMI DAILY</span>
+                        <h1 className="text-3xl md:text-5xl font-serif text-gray-900 leading-tight">
+                            오늘의 운세 <span className="text-[#88A096]">&</span> 포츈쿠키
+                        </h1>
+                        <p className="text-gray-500 mt-4 text-sm md:text-base max-w-sm mx-auto leading-relaxed">
+                            당신의 생년월일에 숨겨진 오늘의 운명과<br className="hidden md:block" />행운의 포츈 메시지를 확인해보세요.
+                        </p>
+                    </div>
+
+                    {/* Entry Card */}
+                    <div className="w-full bg-white/80 backdrop-blur-xl p-8 md:p-10 rounded-[2rem] shadow-xl border border-white/60">
+                        <div className="text-center mb-8">
+                            <div className="w-16 h-16 bg-[#88A096]/10 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4">
+                                🔮
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-800">생년월일 입력</h2>
+                            <p className="text-gray-400 text-xs mt-1">개인화된 맞춤 분석을 위해 필요합니다</p>
+                        </div>
+
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            const form = e.currentTarget;
+                            const year = parseInt((form.elements.namedItem('year') as HTMLInputElement).value);
+                            const month = parseInt((form.elements.namedItem('month') as HTMLInputElement).value);
+                            const day = parseInt((form.elements.namedItem('day') as HTMLInputElement).value);
+                            
+                            if (year && month && day) {
+                                sessionStorage.setItem('arche_analysis', JSON.stringify({ year, month, day }));
+                                window.location.reload();
+                            }
+                        }} className="w-full space-y-6">
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-gray-500 mb-2 pl-1">태어난 연도</label>
+                                    <input name="year" type="number" placeholder="YYYY" required min="1900" max="2026"
+                                        className="w-full px-5 py-4 rounded-xl text-center text-lg font-medium outline-none transition-all"
+                                        style={{ background: '#F7F3EE', border: '1px solid transparent', color: '#2D2D2D' }} 
+                                        onFocus={(e) => e.target.style.borderColor = '#88A096'}
+                                        onBlur={(e) => e.target.style.borderColor = 'transparent'} />
+                                </div>
+                                <div className="flex gap-4 flex-1">
+                                    <div className="flex-1">
+                                        <label className="block text-xs font-bold text-gray-500 mb-2 pl-1 text-center">월</label>
+                                        <input name="month" type="number" placeholder="MM" required min="1" max="12"
+                                            className="w-full px-3 py-4 rounded-xl text-center text-lg font-medium outline-none transition-all"
+                                            style={{ background: '#F7F3EE', border: '1px solid transparent', color: '#2D2D2D' }} 
+                                            onFocus={(e) => e.target.style.borderColor = '#88A096'}
+                                            onBlur={(e) => e.target.style.borderColor = 'transparent'} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="block text-xs font-bold text-gray-500 mb-2 pl-1 text-center">일</label>
+                                        <input name="day" type="number" placeholder="DD" required min="1" max="31"
+                                            className="w-full px-3 py-4 rounded-xl text-center text-lg font-medium outline-none transition-all"
+                                            style={{ background: '#F7F3EE', border: '1px solid transparent', color: '#2D2D2D' }} 
+                                            onFocus={(e) => e.target.style.borderColor = '#88A096'}
+                                            onBlur={(e) => e.target.style.borderColor = 'transparent'} />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="pt-2">
+                                <button type="submit"
+                                    className="block w-full py-5 rounded-xl font-bold text-white transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
+                                    style={{ background: 'linear-gradient(135deg, #88A096, #6B847A)' }}
+                                >
+                                    내 운세 무료로 열어보기
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div className="mt-10 text-center">
+                        <Link href="/" className="text-gray-400 text-sm font-medium hover:text-[#88A096] transition-colors flex items-center gap-1 justify-center">
+                            <ChevronLeft className="w-4 h-4" /> 메인으로 돌아가기
+                        </Link>
+                    </div>
                 </div>
             </main>
         );

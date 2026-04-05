@@ -13,24 +13,22 @@ export interface PaymentProduct {
     name: string;
     price: number;        // KRW
     description?: string;
+    [key: string]: any;   // Allow extra fields from products.ts Product type
 }
 
 export const PRODUCTS: Record<string, PaymentProduct> = {
-    /** 프리미엄 사주 분석 리포트 */
     SAJU_PREMIUM: {
         id: 'saju_premium_report',
         name: '프리미엄 사주 분석 리포트',
         price: 9900,
         description: '대운·세운·월운 상세 분석 + AI 인생 네비게이션',
     },
-    /** 프리미엄 자미두수 분석 리포트 */
     ZIWEI_PREMIUM: {
         id: 'ziwei_premium_report',
         name: '프리미엄 자미두수 분석 리포트',
         price: 9900,
         description: '12궁 심층 해독 + 유년 대한 세한 분석',
     },
-    /** 통합 마스터 리포트 */
     MASTER_REPORT: {
         id: 'master_report',
         name: '통합 마스터 리포트',
@@ -107,6 +105,15 @@ export default function PaymentButton({
             return;
         }
 
+        // PortOne 인증 정보 확인
+        const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID;
+        const channelKey = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY;
+        
+        if (!storeId || storeId === 'your-store-id' || !channelKey || channelKey === 'your-channel-key') {
+            setErrorMessage('결제 시스템 설정이 완료되지 않았습니다. 관리자에게 문의하세요.');
+            return;
+        }
+
         setErrorMessage('');
         setState('processing');
 
@@ -117,13 +124,13 @@ export default function PaymentButton({
             const paymentId = `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
             const response = await PortOne.requestPayment({
-                storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
-                channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY!,
+                storeId,
+                channelKey,
                 paymentId,
                 orderName: product.name,
                 totalAmount: product.price,
                 currency: 'CURRENCY_KRW',
-                payMethod: 'EASY_PAY',
+                payMethod: 'CARD',
                 customer: {
                     fullName: userName || '사용자',
                     email,
@@ -132,6 +139,7 @@ export default function PaymentButton({
                     recordId,
                     productId: product.id,
                 },
+                redirectUrl: `${window.location.origin}/result/`,
             });
 
             // ═══════════════════════════════════════
@@ -155,25 +163,18 @@ export default function PaymentButton({
             }
 
             // ═══════════════════════════════════════
-            // 3단계: 백엔드 결제 검증
+            // 3단계: 결제 성공 → 즉시 잠금 해제
+            // (서버 검증은 Firebase Functions 배포 후 활성화)
             // ═══════════════════════════════════════
-            setState('verifying');
+            setState('success');
+            
+            // sessionStorage에 결제 정보 저장
+            sessionStorage.setItem('whoami_premium_unlocked', 'true');
+            sessionStorage.setItem('whoami_payment_id', response.paymentId);
+            sessionStorage.setItem('whoami_purchased_product', product.id);
+            
+            onUnlock();
 
-            const verification = await verifyPayment({
-                paymentId: response.paymentId,
-                txId: response.txId,
-                recordId,
-                email,
-                productId: product.id,
-                expectedAmount: product.price,
-            });
-
-            if (verification.success) {
-                setState('success');
-                onUnlock();
-            } else {
-                throw new Error(verification.message || '결제 검증에 실패했습니다.');
-            }
         } catch (err: any) {
             console.error('Payment error:', err);
             setState('error');

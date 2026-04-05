@@ -7,7 +7,7 @@ import { useT, useLocale } from '@/i18n/LocaleContext';
 import AdSense from '@/components/AdSense';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import AnalysisCard from '@/components/AnalysisCard';
-import PaymentButton from '@/components/PaymentButton';
+
 import { NarrativeLibrary, CategoryNarratives } from '@/lib/narrative-library';
 import { PremiumNarrativeLibrary } from '@/lib/premium-narratives';
 import { ArcheEngine } from '@/lib/arche-engine';
@@ -33,7 +33,7 @@ interface ResultClientProps {
     recordId: string;
     profile: any;
     lpNumber: number;
-    isPaid: boolean;
+    isPaid?: boolean;
     initialReportType?: string;
 }
 
@@ -42,13 +42,8 @@ export default function ResultClient({ recordId, profile, lpNumber, isPaid, init
     const { locale } = useLocale();
     const LocalNarrative = getLocalizedNarratives(locale);
     const LocalCategoryNarratives = getLocalizedCategoryNarratives(locale);
-    const [unlocked, setUnlocked] = useState(() => {
-        if (isPaid) return true;
-        if (typeof window !== 'undefined') {
-            return sessionStorage.getItem('whoami_premium_unlocked') === 'true';
-        }
-        return false;
-    });
+    const unlocked = true;
+    const [justUnlocked] = useState(false);
     const [analysis, setAnalysis] = useState<any>(null);
     const [analysisP2, setAnalysisP2] = useState<any>(null);
     const [webhookStatus, setWebhookStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
@@ -109,7 +104,7 @@ export default function ResultClient({ recordId, profile, lpNumber, isPaid, init
             const p1Str = sessionStorage.getItem('arche_analysis');
             if (p1Str) {
                 const parsed1 = JSON.parse(p1Str);
-                setAnalysis(ArcheEngine.performAnalysis(parsed1.year, parsed1.month, parsed1.day));
+                setAnalysis(ArcheEngine.performAnalysis(String(parsed1.year), String(parsed1.month), String(parsed1.day)));
             } else if (y > 0 && m > 0 && d > 0) {
                 setAnalysis(ArcheEngine.performAnalysis(String(y), String(m), String(d)));
             }
@@ -172,10 +167,7 @@ export default function ResultClient({ recordId, profile, lpNumber, isPaid, init
     };
     const typeMeta = TYPE_META[reportType] || TYPE_META['summary'];
 
-    const handleUnlock = () => {
-        setUnlocked(true);
-        sessionStorage.setItem('whoami_premium_unlocked', 'true');
-    };
+
 
     // PDF Download Handler
     const handleDownloadPDF = async () => {
@@ -252,9 +244,9 @@ export default function ResultClient({ recordId, profile, lpNumber, isPaid, init
                 isLocked={!isOpen}
             >
                 {isOpen ? (
-                    <div className="space-y-6">
+                    <div className={`space-y-6 ${justUnlocked && key !== 'lifePath' ? 'premium-unlock-enter' : ''}`}>
                         {content.paragraphs.map((p: string, i: number) => (
-                            <p key={i} className="text-gray-600 leading-relaxed text-[17px] font-sans">{p}</p>
+                            <p key={i} className="leading-relaxed text-[17px] font-sans" style={{ color: 'var(--foreground)', opacity: 0.75, lineHeight: 1.85 }}>{p}</p>
                         ))}
                     </div>
                 ) : (
@@ -631,8 +623,8 @@ export default function ResultClient({ recordId, profile, lpNumber, isPaid, init
                     <AdSense format="auto" responsive={true} style={{ maxHeight: 250 }} />
                 </div>
 
-                {/* ── Premium Sections (blurred when locked) ── */}
-                <div className={!unlocked ? 'premium-blur' : ''}>
+                {/* ── Premium Sections (무료 공개) ── */}
+                <div>
 
                 {/* ── Arche Capacity Analysis (4 Domains) ── */}
                 {analysis && (reportType === 'summary' || reportType === 'numerology') && activeTab === 'summary' && (
@@ -731,71 +723,21 @@ export default function ResultClient({ recordId, profile, lpNumber, isPaid, init
                 </div>
             )}
 
-            {/* ── Paywall Section ── */}
-            <div ref={paywallRef} className="px-6 py-12">
-                {!unlocked && (
-                    <div className="max-w-xl mx-auto space-y-8">
-                        {/* Premium teaser card */}
-                        <div className="relative rounded-[2rem] overflow-hidden shadow-2xl">
-                            {/* Background gradient */}
-                            <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #0C1018 0%, #1A1528 50%, #0C1018 100%)' }} />
-                            <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(circle at 30% 20%, rgba(136,160,150,0.3), transparent 50%), radial-gradient(circle at 70% 80%, rgba(196,168,130,0.2), transparent 50%)' }} />
-                            
-                            <div className="relative z-10 p-6 md:p-10 text-center space-y-6">
-                                {/* Icon */}
-                                <div className="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(136,160,150,0.15)', border: '1px solid rgba(136,160,150,0.25)' }}>
-                                    <Lock className="w-7 h-7 text-sage" />
-                                </div>
-                                
-                                <div className="space-y-3">
-                                    <h2 className="text-2xl md:text-3xl font-serif text-white leading-tight">
-                                        더 깊은 운명의 지도가<br /><span className="text-sage italic">잠겨 있습니다</span>
-                                    </h2>
-                                    <p className="text-white/50 text-sm leading-relaxed max-w-sm mx-auto">
-                                        심층 해설 · 인생 그래프 · 역량 분석 · 에너지 프로필 등<br />전체 리포트를 잠금 해제하세요
-                                    </p>
-                                </div>
-                                
-                                {/* Feature list */}
-                                <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto text-left">
-                                    {[
-                                        { icon: '✦', label: '심층 해설 6개 영역' },
-                                        { icon: '📊', label: '인생 총운 그래프' },
-                                        { icon: '🧬', label: '에너지 프로필 분석' },
-                                        { icon: '🔮', label: '운명 에너지 대시보드' },
-                                    ].map((feat) => (
-                                        <div key={feat.label} className="flex items-center gap-2 py-1.5">
-                                            <span className="text-sm">{feat.icon}</span>
-                                            <span className="text-[12px] text-white/60 font-medium">{feat.label}</span>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Payment form */}
-                                <div className="pt-2">
-                                    <PaymentButton
-                                        recordId={recordId}
-                                        userName={profile?.full_name || ''}
-                                        onUnlock={handleUnlock}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {unlocked && (
-                    <div className="max-w-md mx-auto text-center space-y-6">
-                        <button
-                            onClick={handleDownloadPDF}
-                            disabled={isDownloading}
-                            className="inline-flex items-center gap-2 px-6 md:px-8 py-3 md:py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition-all disabled:opacity-50"
-                        >
-                            <Sparkles className="w-5 h-5" />
-                            {isDownloading ? '리포트 생성 중...' : '분석 리포트 PDF 저장하기'}
-                        </button>
-                    </div>
-                )}
+            {/* ── PDF Download (무료) ── */}
+            <div className="px-6 py-8 text-center">
+                <button
+                    onClick={handleDownloadPDF}
+                    disabled={isDownloading}
+                    className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-bold transition-all disabled:opacity-50"
+                    style={{
+                        background: 'rgba(136,160,150,0.08)',
+                        border: '1px solid rgba(136,160,150,0.2)',
+                        color: '#88A096',
+                    }}
+                >
+                    <Download className="w-5 h-5" />
+                    {isDownloading ? '리포트 생성 중...' : '리포트 PDF 저장'}
+                </button>
             </div>
 
             {/* ── Circular Navigation ── */}
@@ -856,22 +798,7 @@ export default function ResultClient({ recordId, profile, lpNumber, isPaid, init
                 </p>
             </footer>
 
-            {/* ── Sticky Floating CTA Bar (when locked) ── */}
-            {!unlocked && (
-                <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 pt-2" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 60%, transparent)' }}>
-                    <button
-                        onClick={() => paywallRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                        className="w-full max-w-lg mx-auto flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.97]"
-                        style={{
-                            background: 'linear-gradient(135deg, #88A096, #6A8FA0, #88A096)',
-                            boxShadow: '0 8px 32px rgba(136,160,150,0.4)',
-                        }}
-                    >
-                        <Lock className="w-5 h-5" />
-                        프리미엄 결제하고 전체 결과 확인하기
-                    </button>
-                </div>
-            )}
+
         </div>
     );
 }

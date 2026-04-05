@@ -36,6 +36,24 @@ export default function SajuForm() {
         isLeap: false
     });
 
+    // Auto-fill from sessionStorage if available
+    useEffect(() => {
+        try {
+            const stored = sessionStorage.getItem('arche_analysis');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                if (parsed.year && parsed.month && parsed.day) {
+                    setFormData(prev => ({
+                        ...prev,
+                        year: String(parsed.year),
+                        month: String(parsed.month),
+                        day: String(parsed.day)
+                    }));
+                }
+            }
+        } catch {}
+    }, []);
+
     // Reset loading when page is restored from bfcache (back button)
     useEffect(() => {
         const handlePageShow = (e: PageTransitionEvent) => {
@@ -50,7 +68,6 @@ export default function SajuForm() {
         setLoading(true);
 
         try {
-            sessionStorage.removeItem('arche_analysis');
             sessionStorage.removeItem('arche_analysis_p2');
             sessionStorage.setItem('arche_report_type', 'saju');
 

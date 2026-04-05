@@ -15,6 +15,8 @@ import {
     type SajuResult as ManseryeokSajuResult,
 } from '@fullstackfamily/manseryeok';
 
+export { lunarToSolar, solarToLunar };
+
 // ─────────────────────────────────────────────
 // 공개 인터페이스
 // ─────────────────────────────────────────────

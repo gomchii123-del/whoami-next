@@ -113,16 +113,41 @@ export default function TarotForm() {
                                     key={idx}
                                     onClick={() => toggleCardSelection(idx)}
                                     className={`
-                                        relative w-full aspect-[2/3] rounded-md sm:rounded-lg cursor-pointer transition-all duration-300
-                                        ${isSelected ? '-translate-y-3 ring-2 sm:ring-4 ring-purple-400 shadow-2xl z-10 scale-110' : 'hover:-translate-y-1 shadow-sm hover:shadow-md'}
-                                        bg-gradient-to-br from-purple-800 to-indigo-950 border border-white/20
+                                        relative w-full aspect-[2/3] rounded-md sm:rounded-lg cursor-pointer transition-all duration-500
+                                        ${isSelected 
+                                            ? '-translate-y-3 sm:-translate-y-4 ring-1 ring-amber-300/80 shadow-[0_10px_25px_rgba(107,33,168,0.7)] z-10 scale-110' 
+                                            : 'hover:-translate-y-1.5 hover:shadow-[0_8px_20px_rgba(107,33,168,0.5)] shadow-md'
+                                        }
+                                        overflow-hidden
                                     `}
+                                    style={{
+                                        background: 'linear-gradient(145deg, #1e1b4b 0%, #312e81 45%, #4c1d95 100%)',
+                                        border: isSelected ? '1px solid rgba(253, 224, 71, 0.7)' : '1px solid rgba(139, 92, 246, 0.5)',
+                                    }}
                                 >
-                                    <div className="absolute inset-0.5 sm:inset-1 border border-white/10 rounded sm:rounded-md flex items-center justify-center">
-                                        <div className="text-white/10 text-xs sm:text-lg font-serif">🜔</div>
+                                    {/* Gold intricate inner border */}
+                                    <div className="absolute inset-1 sm:inset-1.5 rounded-[4px] sm:rounded-md border-x border-amber-500/30 border-y border-amber-500/20 flex flex-col justify-between py-1 px-0.5">
+                                        <div className="absolute inset-[2px] border border-amber-400/10 rounded-[2px]" />
+                                        {/* Subtle corner decorations */}
+                                        <div className="w-1.5 h-1.5 border-t border-l border-amber-500/40 absolute top-0 left-0" />
+                                        <div className="w-1.5 h-1.5 border-t border-r border-amber-500/40 absolute top-0 right-0" />
+                                        <div className="w-1.5 h-1.5 border-b border-l border-amber-500/40 absolute bottom-0 left-0" />
+                                        <div className="w-1.5 h-1.5 border-b border-r border-amber-500/40 absolute bottom-0 right-0" />
                                     </div>
+
+                                    {/* Center mystical emblem */}
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <div className="w-6 h-6 sm:w-10 sm:h-10 rounded-full border border-amber-500/40 bg-indigo-950/60 shadow-[0_0_15px_rgba(245,158,11,0.15)] flex items-center justify-center">
+                                            <span className="text-amber-500/80 text-[10px] sm:text-lg font-serif">☾</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Background glowing particles/stars simulation via radial gradient */}
+                                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.06)_0%,_transparent_65%)] pointer-events-none" />
+
+                                    {/* Number badge when selected */}
                                     {isSelected && (
-                                        <div className="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-6 sm:h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-[8px] sm:text-xs font-bold shadow-lg border border-white animate-in zoom-in">
+                                        <div className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-7 sm:h-7 bg-gradient-to-br from-amber-300 to-yellow-600 text-purple-950 rounded-full flex items-center justify-center text-[9px] sm:text-[13px] font-black shadow-[0_0_12px_rgba(253,224,71,0.6)] border border-amber-100/50 animate-in zoom-in spin-in-12 duration-300">
                                             {selectionOrder}
                                         </div>
                                     )}

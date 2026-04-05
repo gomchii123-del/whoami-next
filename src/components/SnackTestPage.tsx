@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { SNACK_TESTS, SnackContentLibrary, SnackTest, SnackContent } from '@/lib/snack-tests';
 import { TEST_THEMES, GENERIC_THEMES } from '@/lib/snack-deep-analysis';
 import { getBeLens } from '@/lib/snack-be-lens';
-import { AnalysisResult } from '@/lib/arche-engine';
+import { ArcheEngine, AnalysisResult } from '@/lib/arche-engine';
 import { getINDScoreKey, IND_SCORE_MESSAGES, RISK_MESSAGES, LOOP_MESSAGES, BIORHYTHM_LABELS } from '@/lib/ind-narratives';
 
 /**
@@ -131,26 +131,47 @@ export default function SnackTestPage({ testId }: Props) {
     const [indData, setIndData] = useState<AnalysisResult | null>(null);
     const test = SNACK_TESTS.find(t => t.id === testId);
 
+    const analyzeAndSetState = (yearStr: string, monthStr: string, dayStr: string) => {
+        try {
+            const result = ArcheEngine.performAnalysis(yearStr, monthStr, dayStr);
+            setIndData(result);
+            // 운명수 (alpha)
+            const lpNum = result.lifePath;
+            const lpBase = lpNum === 11 ? 2 : lpNum === 22 ? 4 : lpNum === 33 ? 6 : lpNum;
+            setLp(lpBase);
+            setLpDisplay(lpNum);
+            // 본질수 (P_core)
+            const beNum = result.bornEssence;
+            const beBase = beNum === 11 ? 2 : beNum === 22 ? 4 : beNum === 33 ? 6 : beNum;
+            setBe(beBase);
+            setBeDisplay(beNum);
+            const lib = SnackContentLibrary[testId];
+            if (lib && lib[lpBase]) {
+                setContent(lib[lpBase]);
+            } else {
+                const trait = LP_TRAITS[lpBase];
+                setContent({
+                    title: `당신의 분석 결과: ${trait.archetype}`,
+                    body: [
+                        `당신은 기본적으로 [${trait.element}] 에너지를 강하게 띄고 있습니다.`,
+                        `이 에너지는 당신에게 ${trait.strength}을(를) 부여하지만,`,
+                        `때로는 ${trait.weakness} 패턴으로 당신을 흔들기도 합니다.`
+                    ],
+                    insight: `현재 상세 풀이 엔진이 업데이트 중입니다. 수비학 알파 코어(Alpha Core)를 기반으로 당신의 운명 에너지를 해석했습니다.`
+                });
+            }
+            setPhase('intro');
+        } catch (e) {
+            console.error("Analysis Error:", e);
+        }
+    };
+
     useEffect(() => {
         try {
             const stored = sessionStorage.getItem('arche_analysis');
             if (stored) {
                 const parsed = JSON.parse(stored);
-                const { ArcheEngine } = require('@/lib/arche-engine');
-                const result = ArcheEngine.performAnalysis(parsed.year, parsed.month, parsed.day);
-                setIndData(result);
-                // 운명수 (alpha)
-                const lpNum = result.lifePath;
-                const lpBase = lpNum === 11 ? 2 : lpNum === 22 ? 4 : lpNum === 33 ? 6 : lpNum;
-                setLp(lpBase);
-                setLpDisplay(lpNum);
-                // 본질수 (P_core)
-                const beNum = result.bornEssence;
-                const beBase = beNum === 11 ? 2 : beNum === 22 ? 4 : beNum === 33 ? 6 : beNum;
-                setBe(beBase);
-                setBeDisplay(beNum);
-                const lib = SnackContentLibrary[testId];
-                if (lib && lib[lpBase]) setContent(lib[lpBase]);
+                analyzeAndSetState(String(parsed.year), String(parsed.month), String(parsed.day));
             }
         } catch {}
     }, [testId]);
@@ -166,11 +187,11 @@ export default function SnackTestPage({ testId }: Props) {
     // Deep analysis — USE BE for variation (LP for test-specific, BE for generic)
     const testTheme = TEST_THEMES[testId];
     const generic = be ? GENERIC_THEMES[be] : null;  // BE로 변경!
-    const deepScenario = lp && testTheme ? testTheme.scenario[lp - 1] : generic?.scenario || '';
-    const deepSelfCheck = lp && testTheme ? testTheme.selfCheck[lp - 1] : generic?.selfCheck || [];
-    const deepRelationship = lp && testTheme ? testTheme.relationship[lp - 1] : generic?.relationship || '';
-    const deepGrowth = lp && testTheme ? testTheme.growth[lp - 1] : generic?.growth || [];
-    const deepWarning = lp && testTheme ? testTheme.warning[lp - 1] : generic?.warning || '';
+    const deepScenario = lp && testTheme && testTheme.scenario ? testTheme.scenario[lp - 1] : generic?.scenario || '';
+    const deepSelfCheck = lp && testTheme && testTheme.selfCheck ? testTheme.selfCheck[lp - 1] : generic?.selfCheck || [];
+    const deepRelationship = lp && testTheme && testTheme.relationship ? testTheme.relationship[lp - 1] : generic?.relationship || '';
+    const deepGrowth = lp && testTheme && testTheme.growth ? testTheme.growth[lp - 1] : generic?.growth || [];
+    const deepWarning = lp && testTheme && testTheme.warning ? testTheme.warning[lp - 1] : generic?.warning || '';
 
     const handleShare = async () => {
         const url = window.location.href;
@@ -220,15 +241,39 @@ export default function SnackTestPage({ testId }: Props) {
                             <h1 className="text-2xl font-black text-white">{test.title}</h1>
                             <p className="text-[14px]" style={{ color: 'rgba(255,255,255,0.35)' }}>{test.subtitle}</p>
                         </div>
-                        <div className="space-y-3 w-full max-w-xs">
+                        <div className="space-y-4 w-full max-w-xs pt-4">
                             <p className="text-[14px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                                이 테스트를 보려면 먼저<br />생년월일 분석이 필요합니다
+                                정확한 분석을 위해<br />태어난 생년월일을 입력해주세요.
                             </p>
-                            <a href="/analyze/numerology/" onClick={(e) => { e.preventDefault(); window.location.href = '/analyze/numerology/'; }}
-                               className="block w-full py-4 rounded-2xl text-[15px] font-bold text-center transition-all active:scale-[0.97]"
-                               style={{ background: `linear-gradient(135deg, ${test.accentColor}, ${test.accentColor}CC)`, color: '#fff', boxShadow: `0 8px 24px ${test.accentColor}30` }}>
-                                ✦ 생년월일 입력하기
-                            </a>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const form = e.currentTarget;
+                                const year = parseInt((form.elements.namedItem('year') as HTMLInputElement).value);
+                                const month = parseInt((form.elements.namedItem('month') as HTMLInputElement).value);
+                                const day = parseInt((form.elements.namedItem('day') as HTMLInputElement).value);
+                                
+                                if (year && month && day) {
+                                    sessionStorage.setItem('arche_analysis', JSON.stringify({ year, month, day }));
+                                    analyzeAndSetState(String(year), String(month), String(day));
+                                }
+                            }} className="space-y-3">
+                                <div className="flex gap-2">
+                                    <input name="year" type="number" placeholder="YYYY" required min="1900" max="2026"
+                                        className="w-1/2 px-4 py-4 rounded-xl text-center text-[16px] font-bold outline-none"
+                                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }} />
+                                    <input name="month" type="number" placeholder="MM" required min="1" max="12"
+                                        className="w-1/4 px-3 py-4 rounded-xl text-center text-[16px] font-bold outline-none"
+                                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }} />
+                                    <input name="day" type="number" placeholder="DD" required min="1" max="31"
+                                        className="w-1/4 px-3 py-4 rounded-xl text-center text-[16px] font-bold outline-none"
+                                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }} />
+                                </div>
+                                <button type="submit"
+                                    className="block w-full py-4 mt-2 rounded-2xl text-[16px] font-black text-center transition-all active:scale-[0.97]"
+                                    style={{ background: `linear-gradient(135deg, ${test.accentColor}, ${test.accentColor}CC)`, color: '#fff', boxShadow: `0 8px 24px ${test.accentColor}30` }}>
+                                    운명 분석 시작하기
+                                </button>
+                            </form>
                         </div>
                     </div>
                 )}
