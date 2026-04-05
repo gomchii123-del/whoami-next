@@ -6,6 +6,7 @@ import { TEST_THEMES, GENERIC_THEMES } from '@/lib/snack-deep-analysis';
 import { getBeLens } from '@/lib/snack-be-lens';
 import { ArcheEngine, AnalysisResult } from '@/lib/arche-engine';
 import { getINDScoreKey, IND_SCORE_MESSAGES, RISK_MESSAGES, LOOP_MESSAGES, BIORHYTHM_LABELS } from '@/lib/ind-narratives';
+import { FORTUNES } from '@/components/FortuneCookie';
 
 /**
  * 개별 스낵 테스트 결과 페이지 — 풀 리포트 몰입형 디자인
@@ -150,6 +151,13 @@ export default function SnackTestPage({ testId }: Props) {
                 setContent(lib[lpBase]);
             } else {
                 const trait = LP_TRAITS[lpBase];
+                // 생년월일에 기반한 일관된 랜덤성을 주거나 단순 랜덤으로 포춘 쿠키 메시지를 뽑습니다
+                const pY = parseInt(yearStr);
+                const pM = parseInt(monthStr);
+                const pD = parseInt(dayStr);
+                const hashIndex = (pY * 13 + pM * 7 + pD * 3) % FORTUNES.length;
+                const fortuneAdvice = FORTUNES[hashIndex] || FORTUNES[0];
+
                 setContent({
                     title: `당신의 분석 결과: ${trait.archetype}`,
                     body: [
@@ -157,7 +165,7 @@ export default function SnackTestPage({ testId }: Props) {
                         `이 에너지는 당신에게 ${trait.strength}을(를) 부여하지만,`,
                         `때로는 ${trait.weakness} 패턴으로 당신을 흔들기도 합니다.`
                     ],
-                    insight: `현재 상세 풀이 엔진이 업데이트 중입니다. 수비학 알파 코어(Alpha Core)를 기반으로 당신의 운명 에너지를 해석했습니다.`
+                    insight: `🥠 포츈 메세지: "${fortuneAdvice}"`
                 });
             }
             setPhase('intro');

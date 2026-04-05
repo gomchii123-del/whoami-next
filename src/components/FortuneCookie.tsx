@@ -9,7 +9,7 @@ import { useState, useCallback, useEffect } from 'react';
  * 5장의 별 카드 중 1장 선택 → 명언 출현.
  */
 
-const FORTUNES = [
+export const FORTUNES = [
     '오늘 해야 할 통화를 내일로 미루지 마세요. 중요한 기회가 날아갈 수 있습니다.',
     '자신을 탓하는 시간을 줄이고, 해결책을 찾는 데 에너지를 쓰세요.',
     '타인의 평가에 휘둘리지 마세요. 그들은 당신의 삶을 책임지지 않습니다.',
