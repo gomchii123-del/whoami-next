@@ -107,7 +107,8 @@ const FEATURED_IDS = ['factbomb', 'attraction', 'bed-persona', 'night-persona', 
 
 const CLASSIC_SERVICES = [
     { id: 'numerology', href: '/analyze/numerology/', icon: '🔮', title: '수비학 분석', desc: '생년월일로 타고난 본질 해독', badge: 'MAIN' },
-    { id: 'omniverse', href: '/analyze/omniverse/', icon: '♾️', title: '통합 프롬프트 제작', desc: '사주·자미·점성술 종합 AI 프롬프트 분석', badge: 'PRO' },
+    { id: 'ultimate', href: '/analyze/ultimate/', icon: '👑', title: '얼티밋 프롬프트', desc: '5대 시스템(사주/자미/점성/휴디/수비학) 마스터 통합 분석', badge: 'PRO' },
+    { id: 'omniverse', href: '/analyze/omniverse/', icon: '♾️', title: '통합 프롬프트 제작', desc: '사주·자미·점성술 종합 AI 프롬프트 분석' },
     { id: 'cosmic-design', href: '/analyze/cosmic-design/', icon: '🧬', title: '코스믹 디자인', desc: '휴먼디자인 × 수비학 프롬프트 제작', badge: 'NEW' },
     { id: 'saju', href: '/analyze/saju/', icon: '☯️', title: '사주팔자', desc: '생년월일시로 읽는 타고난 운명' },
     { id: 'tarot', href: '/analyze/tarot/', icon: '🃏', title: '타로 카드', desc: '지금 이 순간의 메시지 리딩' },
